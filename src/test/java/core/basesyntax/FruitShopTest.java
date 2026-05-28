@@ -72,7 +72,10 @@ public class FruitShopTest {
 
     @Test
     void fileReader_readFile_throwsException() throws IOException {
-        assertThrows(IOException.class, () -> fileReader.readFile(Path.of("")));
+        assertThrows(IOException.class,
+                () -> fileReader
+                        .readFile(Path
+                                .of("src/test/java/resources/non_existent_folder/ghost_file.csv")));
     }
 
     @Test
