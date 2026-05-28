@@ -1,7 +1,9 @@
 package core.basesyntax;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -64,19 +66,43 @@ public class FruitShopTest {
 
     @Test
     void fileReader_readFile_equals() throws IOException {
-        List<String> inputFile = fileReader.readFile(Path.of("src/main/resources/data.csv"));
+        List<String> inputFile = fileReader.readFile(Path.of("src/test/java/resources/data.csv"));
         assertEquals(testFile, inputFile);
     }
 
     @Test
+    void fileReader_readFile_throwsException() throws IOException {
+        assertThrows(IOException.class, () -> fileReader.readFile(Path.of("")));
+    }
+
+    @Test
     void dataConverter_convertData_equals() throws IOException {
-        List<String> inputFile = fileReader.readFile(Path.of("src/main/resources/data.csv"));
+        List<String> inputFile = fileReader.readFile(Path.of("src/test/java/resources/data.csv"));
         DataConverter dataConverter = new DataConverterImpl();
         List<FruitTransaction> fruitTransactions =
                 dataConverter.convertToFruitTransaction(inputFile);
         List<FruitTransaction> testFruitTransactions =
                 dataConverter.convertToFruitTransaction(testFile);
         assertEquals(testFruitTransactions, fruitTransactions);
+    }
+
+    @Test
+    void dataConverter_convertData_corruptedData() throws IOException {
+        List<String> corruptedFile = List.of("type,fruit,quantity",
+                "b,banana,twenty",
+                "b,apple,100",
+                "s,banana,one handred",
+                "p,banana,13",
+                "r,apple,ten",
+                "p,apple,20",
+                "p,banana,5",
+                "s,banana,50");
+
+        List<String> inputFile = fileReader.readFile(Path.of("src/test/java/resources/data.csv"));
+        DataConverter dataConverter = new DataConverterImpl();
+
+        assertThrows(NumberFormatException.class,
+                () -> dataConverter.convertToFruitTransaction(corruptedFile));
     }
 
     @Test
@@ -113,6 +139,18 @@ public class FruitShopTest {
     }
 
     @Test
+    void removeOperationHandler_handle_throwsException() throws IOException {
+        storage.add("Banana", 60);
+        RemoveOperationHandler handler = new RemoveOperationHandler(storage);
+
+        FruitTransaction fruitTransaction = new FruitTransaction(
+                FruitTransaction.Operation.PURCHASE,
+                "Banana",
+                70);
+        assertThrows(RuntimeException.class, () -> handler.handle(fruitTransaction));
+    }
+
+    @Test
     void returnOperationHandler_handle_isWorkable() throws IOException {
         storage.add("Banana", 10);
         ReturnOperationHandler handler = new ReturnOperationHandler(storage);
@@ -127,6 +165,16 @@ public class FruitShopTest {
         Integer actual = storage.getAllData().get("Banana");
 
         assertEquals(60, actual, "Storage should contain 60 bananas after return operation");
+    }
+
+    @Test
+    void storage_set_throwsException() throws IOException {
+        assertThrows(RuntimeException.class,() -> storage.set("banana", -1));
+    }
+
+    @Test
+    void storage_add_throwsException() throws IOException {
+        assertThrows(RuntimeException.class,() -> storage.add("banana", -1));
     }
 
     @Test
@@ -209,6 +257,30 @@ public class FruitShopTest {
     }
 
     @Test
+    void shopService_process_nullTransactions_throwsException() {
+        OperationStrategy operationStrategy = new OperationStrategyImpl(handlers);
+        ShopService shopService = new ShopServiceImpl(operationStrategy);
+
+        assertThrows(NullPointerException.class, () -> {
+            shopService.process(null);
+        });
+    }
+
+    @Test
+    void shopService_process_unsupportedOperation_throwsException() {
+        OperationStrategy emptyStrategy = new OperationStrategyImpl(new HashMap<>());
+        ShopService shopService = new ShopServiceImpl(emptyStrategy);
+
+        List<FruitTransaction> transactions = List.of(
+                new FruitTransaction(FruitTransaction.Operation.SUPPLY, "banana", 10)
+        );
+
+        assertThrows(NullPointerException.class, () -> {
+            shopService.process(transactions);
+        });
+    }
+
+    @Test
     void reportGenerator_returnCorrectReport() {
         storage.add("Banana", 2);
         storage.add("Pineapple", 1);
@@ -251,5 +323,69 @@ public class FruitShopTest {
         FileWriter fileWriter = new FileWriterImpl();
         assertThrows(RuntimeException.class,() -> fileWriter.write(path, expectedData),
                 "Check your data and path");
+    }
+
+    @Test
+    void fruitTransaction_equalsAndHashCode_workCorrectly() {
+        FruitTransaction fruitTransactionExpected = new FruitTransaction(
+                FruitTransaction.Operation.BALANCE,
+                "banana",
+                52);
+        FruitTransaction fruitTransactionActual = new FruitTransaction(
+                FruitTransaction.Operation.BALANCE,
+                "banana",
+                52);
+        assertEquals(fruitTransactionExpected,fruitTransactionActual);
+
+        int hashExpected = fruitTransactionExpected.hashCode();
+        int hashActual = fruitTransactionActual.hashCode();
+
+        assertEquals(hashExpected, hashActual);
+    }
+
+    @Test
+    void fruitTransaction_equalsAndHashCode_notEquals() {
+        FruitTransaction base = new FruitTransaction(
+                FruitTransaction.Operation.BALANCE,
+                "banana",
+                52);
+
+        FruitTransaction diffOperation = new FruitTransaction(FruitTransaction.Operation.RETURN,
+                "banana",
+                52);
+        FruitTransaction diffFruit = new FruitTransaction(FruitTransaction.Operation.BALANCE,
+                "apples",
+                52);
+        FruitTransaction diffQuantity = new FruitTransaction(FruitTransaction.Operation.BALANCE,
+                "banana",
+                10);
+
+        assertNotEquals(base, diffOperation);
+        assertNotEquals(base, diffFruit);
+        assertNotEquals(base, diffQuantity);
+    }
+
+    @Test
+    void fruitTransaction_equalsAndHashCode_specialCases() {
+        FruitTransaction fruitTransaction = new FruitTransaction(
+                FruitTransaction.Operation.BALANCE, "banana", 52);
+
+        assertFalse(fruitTransaction.equals(null));
+        assertFalse(fruitTransaction.equals("string"));
+    }
+
+    @Test
+    void fruitTransaction_equals_sameObject_returnsTrue() {
+        FruitTransaction transaction = new FruitTransaction(FruitTransaction.Operation.BALANCE,
+                "banana",
+                52);
+
+        assertTrue(transaction.equals(transaction));
+    }
+
+    @Test
+    void fruitTransaction_Operation_from_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> FruitTransaction.Operation.from("f"));
     }
 }

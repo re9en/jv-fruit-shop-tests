@@ -16,10 +16,6 @@ public class FruitTransaction {
             this.code = code;
         }
 
-        String getCode() {
-            return code;
-        }
-
         public static Operation from(String value) {
             for (Operation a : values()) {
                 if (a.code.equals(value)) {
