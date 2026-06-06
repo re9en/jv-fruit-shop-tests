@@ -57,6 +57,6 @@ public class Main {
 
         // 6. Write the received report into the destination file
         FileWriter fileWriter = new FileWriterImpl();
-        fileWriter.write("finalReport.csv", resultingReport);
+        fileWriter.write("src/main/resources/finalReport.csv", resultingReport);
     }
 }

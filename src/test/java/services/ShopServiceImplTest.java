@@ -3,13 +3,15 @@ package services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import core.basesyntax.BaseTest;
+import db.Storage;
+import db.StorageImpl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import model.FruitTransaction;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import services.impl.ShopServiceImpl;
 import services.interfaces.ShopService;
@@ -21,15 +23,22 @@ import strategy.impl.RemoveOperationHandler;
 import strategy.impl.ReturnOperationHandler;
 import strategy.impl.SupplyOperationHandler;
 
-public class ShopServiceImplTest extends BaseTest {
-    @Test
-    void shopService_process_isWorking() throws IOException {
-        Map<FruitTransaction.Operation, OperationHandler> handlers = new HashMap<>();
+public class ShopServiceImplTest {
 
+    protected Storage storage = new StorageImpl();
+    private final Map<FruitTransaction.Operation, OperationHandler> handlers = new HashMap<>();
+
+    @BeforeEach
+    void setUp() {
+        handlers.clear();
         handlers.put(FruitTransaction.Operation.BALANCE, new BalanceOperationHandler(storage));
         handlers.put(FruitTransaction.Operation.PURCHASE, new RemoveOperationHandler(storage));
         handlers.put(FruitTransaction.Operation.RETURN, new ReturnOperationHandler(storage));
         handlers.put(FruitTransaction.Operation.SUPPLY, new SupplyOperationHandler(storage));
+    }
+
+    @Test
+    void shopService_process_isWorking() throws IOException {
 
         List<FruitTransaction> fruitTransaction = new ArrayList<>();
 

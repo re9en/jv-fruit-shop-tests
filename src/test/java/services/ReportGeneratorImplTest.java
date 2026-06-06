@@ -2,13 +2,16 @@ package services;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import core.basesyntax.BaseTest;
+import db.Storage;
+import db.StorageImpl;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import services.impl.ReportGeneratorImpl;
 import services.interfaces.ReportGenerator;
 
-public class ReportGeneratorImplTest extends BaseTest {
+public class ReportGeneratorImplTest {
+
+    protected Storage storage = new StorageImpl();
 
     @Test
     void reportGenerator_returnCorrectReport() {

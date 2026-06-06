@@ -5,8 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import core.basesyntax.BaseTest;
+import db.Storage;
+import db.StorageImpl;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import model.FruitTransaction;
 import org.junit.jupiter.api.Test;
 import strategy.impl.BalanceOperationHandler;
@@ -14,7 +17,10 @@ import strategy.impl.RemoveOperationHandler;
 import strategy.impl.ReturnOperationHandler;
 import strategy.impl.SupplyOperationHandler;
 
-public class OperationStrategyImplTest extends BaseTest {
+public class OperationStrategyImplTest {
+
+    protected Storage storage = new StorageImpl();
+    protected Map<FruitTransaction.Operation, OperationHandler> handlers = new HashMap<>();
 
     @Test
     void balanceOperationHandler_handle_isWorkable() throws IOException {
@@ -112,6 +118,11 @@ public class OperationStrategyImplTest extends BaseTest {
 
     @Test
     void operationStrategyImpl_getHandler_CanReturnOperation() {
+
+        handlers.put(FruitTransaction.Operation.BALANCE, new BalanceOperationHandler(storage));
+        handlers.put(FruitTransaction.Operation.PURCHASE, new RemoveOperationHandler(storage));
+        handlers.put(FruitTransaction.Operation.RETURN, new ReturnOperationHandler(storage));
+        handlers.put(FruitTransaction.Operation.SUPPLY, new SupplyOperationHandler(storage));
 
         OperationStrategy operationStrategy = new OperationStrategyImpl(handlers);
 
