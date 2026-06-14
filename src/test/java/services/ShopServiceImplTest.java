@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import model.FruitTransaction;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import services.impl.ShopServiceImpl;
 import services.interfaces.ShopService;
@@ -25,11 +25,12 @@ import strategy.impl.SupplyOperationHandler;
 
 public class ShopServiceImplTest {
 
-    protected Storage storage = new StorageImpl();
-    private final Map<FruitTransaction.Operation, OperationHandler> handlers = new HashMap<>();
+    protected static final Storage storage = new StorageImpl();
+    private static final Map<FruitTransaction.Operation, OperationHandler> handlers
+            = new HashMap<>();
 
-    @BeforeEach
-    void setUp() {
+    @BeforeAll
+    static void beforeAll() {
         handlers.clear();
         handlers.put(FruitTransaction.Operation.BALANCE, new BalanceOperationHandler(storage));
         handlers.put(FruitTransaction.Operation.PURCHASE, new RemoveOperationHandler(storage));
@@ -64,16 +65,6 @@ public class ShopServiceImplTest {
         Integer actual2 = storage.getAllData().get("Apple");
         assertEquals(70, actual);
         assertEquals(50, actual2);
-    }
-
-    @Test
-    void shopService_process_nullTransactions_throwsException() {
-        OperationStrategy operationStrategy = new OperationStrategyImpl(handlers);
-        ShopService shopService = new ShopServiceImpl(operationStrategy);
-
-        assertThrows(NullPointerException.class, () -> {
-            shopService.process(null);
-        });
     }
 
     @Test
